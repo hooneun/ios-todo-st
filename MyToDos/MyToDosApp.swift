@@ -13,7 +13,7 @@ struct MyToDosApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .modelContainer(for: ToDoItem.self)
+                .modelContainer(for: [Item.self])
         }
     }
 }
