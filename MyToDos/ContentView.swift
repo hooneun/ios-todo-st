@@ -13,13 +13,33 @@ struct ContentView: View {
 
     @State private var showCreate = false
     @State private var toDoToEdit: Item?
-    @Query(
-        //        filter: #Predicate<Item> { $0.isCompleted == false },
-        sort: [SortDescriptor(\Item.timestamp)]
-//        order:
-    ) private var items: [Item]
+    @Query private var items: [Item]
 
     @State private var showCategory = false
+
+    @State private var searchQuery: String = ""
+
+    var filteredItems: [Item] {
+        if searchQuery.isEmpty {
+            return items
+        }
+
+        let filteredItems = items.compactMap { item in
+            let titleContainsQuery = item.title.range(
+                of: searchQuery,
+                options: .caseInsensitive
+            ) != nil
+
+            let categoryTitleContainsQuery = item.category?.title.range(
+                of: searchQuery,
+                options: .caseInsensitive
+            ) != nil
+
+            return (titleContainsQuery || categoryTitleContainsQuery) ? item : nil
+        }
+
+        return filteredItems
+    }
 
     var body: some View {
         NavigationStack {
@@ -27,7 +47,7 @@ struct ContentView: View {
                 if items.isEmpty {
                     ContentUnavailableView("No ToDo", systemImage: "archivebox")
                 } else {
-                    ForEach(items) { item in
+                    ForEach(filteredItems) { item in
                         HStack {
                             VStack(alignment: .leading) {
                                 if item.isCritical {
@@ -83,6 +103,13 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("My To Do List")
+            .searchable(text: $searchQuery,
+                        prompt: "Search for a title or a category")
+            .overlay {
+                if filteredItems.isEmpty {
+                    ContentUnavailableView.search
+                }
+            }
             .toolbar {
                 ToolbarItem {
                     Button(action: {
